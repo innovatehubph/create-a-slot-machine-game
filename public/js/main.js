@@ -3,8 +3,10 @@ import {
   spinGrid, evaluate, totalBet,
 } from './logic.js';
 import { Reel } from './reels.js';
+import { SYMBOL_ART } from './symbols.js';
 import * as sfx from './audio.js';
-import { resizeFx, burst } from './fx.js';
+import { resizeFx, coinBurst, sparkles, shockwave, rays } from './fx.js';
+import { initScene } from './scene.js';
 
 const $ = (sel) => document.querySelector(sel);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -13,6 +15,7 @@ const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const fmtWin = (n) => '+' + fmt(n);
 
 const ui = {
+  machine: $('#machine'),
   balance: $('#balance'),
   bet: $('#bet'),
   total: $('#total'),
@@ -28,6 +31,7 @@ const ui = {
   banner: $('#banner'),
   bannerTitle: $('#bannerTitle'),
   bannerAmount: $('#bannerAmount'),
+  flash: $('#flash'),
   paytable: $('#paytable'),
   loader: $('#loader'),
 };
@@ -40,6 +44,8 @@ const state = {
   wins: [],
   bannerTimer: 0,
 };
+
+initScene({ reduceMotion });
 
 const reels = [...document.querySelectorAll('.reel')].map(
   (root) => new Reel(root, {
@@ -89,12 +95,33 @@ function setMessage(text, tone = '') {
   ui.message.classList.add('pop');
 }
 
+function restart(el, cls, ms) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), ms);
+}
+
 function clearWins() {
   state.wins = [];
   ui.lines.innerHTML = '';
   document.querySelectorAll('.cell.win').forEach((c) => c.classList.remove('win'));
   clearTimeout(state.bannerTimer);
   ui.banner.classList.remove('show');
+}
+
+function winPoints(wins) {
+  return wins.flatMap(({ rows }) => rows.map((row, reel) => {
+    const r = reels[reel].cellAt(row).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }));
+}
+
+function svgEl(name, attrs, cls) {
+  const el = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (cls) el.setAttribute('class', cls);
+  return el;
 }
 
 function drawLines() {
@@ -107,18 +134,11 @@ function drawLines() {
       const r = reels[reel].cellAt(row).getBoundingClientRect();
       return [r.left - box.left + r.width / 2, r.top - box.top + r.height / 2];
     });
-    const poly = document.createElementNS(SVG_NS, 'polyline');
-    poly.setAttribute('points', pts.map((p) => p.join(',')).join(' '));
-    poly.setAttribute('pathLength', '1');
-    poly.setAttribute('class', 'win-line');
-    ui.lines.appendChild(poly);
+    const points = pts.map((p) => p.join(',')).join(' ');
+    ui.lines.appendChild(svgEl('polyline', { points, pathLength: '1' }, 'win-line glow'));
+    ui.lines.appendChild(svgEl('polyline', { points, pathLength: '1' }, 'win-line core'));
     for (const [x, y] of pts) {
-      const dot = document.createElementNS(SVG_NS, 'circle');
-      dot.setAttribute('cx', x);
-      dot.setAttribute('cy', y);
-      dot.setAttribute('r', 6);
-      dot.setAttribute('class', 'win-dot');
-      ui.lines.appendChild(dot);
+      ui.lines.appendChild(svgEl('circle', { cx: x, cy: y, r: 6 }, 'win-dot'));
     }
   }
 }
@@ -126,8 +146,7 @@ function drawLines() {
 function showBanner(title, amount) {
   ui.bannerTitle.textContent = title;
   ui.bannerAmount.textContent = fmtWin(amount);
-  ui.banner.classList.remove('show');
-  void ui.banner.offsetWidth;
+  restart(ui.banner, 'show', 0);
   ui.banner.classList.add('show');
   clearTimeout(state.bannerTimer);
   state.bannerTimer = setTimeout(() => ui.banner.classList.remove('show'), 2600);
@@ -183,17 +202,31 @@ function settle(grid, bet, cost) {
   countUp(ui.balance, before, state.balance, 900);
   countUp(ui.lastWin, 0, total, 900, fmtWin);
 
+  const box = ui.grid.getBoundingClientRect();
+  const cx = box.left + box.width / 2;
+  const cy = box.top + box.height / 2;
   const mult = total / cost;
   const tier = mult >= 100 ? 'Jackpot' : mult >= 30 ? 'Mega win' : mult >= 10 ? 'Big win' : '';
+
+  if (!reduceMotion) {
+    for (const p of winPoints(wins)) sparkles(p.x, p.y, 10);
+  }
   if (tier) {
     showBanner(tier, total);
     sfx.win(true);
+    if (!reduceMotion) {
+      rays(cx, cy);
+      shockwave(cx, cy, true);
+      coinBurst(cx, cy, 160);
+      restart(ui.flash, 'go', 900);
+      restart(ui.machine, 'shake', 600);
+    }
   } else {
     sfx.win(false);
-  }
-  if (!reduceMotion) {
-    const box = ui.grid.getBoundingClientRect();
-    burst(box.left + box.width / 2, box.top + box.height / 2, Math.min(150, 40 + Math.round(mult * 3)));
+    if (!reduceMotion) {
+      shockwave(cx, cy, false);
+      coinBurst(cx, cy, Math.min(120, 36 + Math.round(mult * 3)));
+    }
   }
   const n = wins.length;
   setMessage(`${n} winning line${n > 1 ? 's' : ''}!`, 'win');
@@ -254,7 +287,7 @@ window.addEventListener('resize', () => {
 
 ui.paytable.innerHTML = SYMBOLS.slice().reverse().map((s) => `
   <div class="pay-card">
-    <span class="pay-glyph" data-symbol="${s.id}">${s.glyph}</span>
+    <span class="pay-glyph">${SYMBOL_ART[s.id]}</span>
     <span class="pay-name">${s.label}</span>
     <span class="pay-value">×${s.pay}</span>
   </div>`).join('');

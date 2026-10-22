@@ -6,15 +6,52 @@
   <meta name="color-scheme" content="dark">
   <title>Neon Slots - Casino Night</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@500;700;800;900&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff6c2"/><stop offset=".45" stop-color="#f5c542"/><stop offset="1" stop-color="#7a4a08"/>
+      </linearGradient>
+      <linearGradient id="gGoldDark" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#8a5a0c"/>
+      </linearGradient>
+      <radialGradient id="gRed" cx=".35" cy=".3" r=".8">
+        <stop offset="0" stop-color="#ffc2c2"/><stop offset=".35" stop-color="#ff3b4f"/><stop offset="1" stop-color="#5e0816"/>
+      </radialGradient>
+      <linearGradient id="gLemon" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#fffbd0"/><stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#b57a00"/>
+      </linearGradient>
+      <linearGradient id="gLeaf" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#d4ff9a"/><stop offset="1" stop-color="#23803a"/>
+      </linearGradient>
+      <linearGradient id="gStem" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9a6434"/><stop offset="1" stop-color="#4a2c10"/>
+      </linearGradient>
+      <radialGradient id="gGrape" cx=".35" cy=".3" r=".8">
+        <stop offset="0" stop-color="#f3e6ff"/><stop offset=".4" stop-color="#a25bff"/><stop offset="1" stop-color="#2e0a66"/>
+      </radialGradient>
+      <linearGradient id="gDiamond" x1="0" y1="0" x2=".6" y2="1">
+        <stop offset="0" stop-color="#f0feff"/><stop offset=".35" stop-color="#7fe0ff"/><stop offset=".7" stop-color="#2d7fe0"/><stop offset="1" stop-color="#0c2a6e"/>
+      </linearGradient>
+      <linearGradient id="gSeven" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffd7de"/><stop offset=".55" stop-color="#ff3d5c"/><stop offset="1" stop-color="#7a0c24"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="stage" aria-hidden="true"><div class="rays"></div><div class="vignette"></div></div>
+
   <div class="loader" id="loader" role="status">
     <div class="ring"></div>
     <p>Loading</p>
   </div>
 
-  <main class="machine">
+  <main class="machine" id="machine">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">★</span><span>Neon<b>Slots</b></span></div>
       <div class="top-actions">
@@ -27,36 +64,44 @@
     </header>
 
     <section class="cabinet">
-      <p id="message" class="message" aria-live="polite"></p>
+      <div class="cabinet-inner">
+        <div class="marquee">
+          <div class="bulbs" data-count="28" aria-hidden="true"></div>
+          <div class="ticker" aria-hidden="true"><span>Welcome to Neon Slots ★ Five paylines ★ Chase the seven ★ Big wins every spin ★</span></div>
+          <div class="bulbs" data-count="28" aria-hidden="true"></div>
+        </div>
 
-      <div class="grid" id="grid">
-        <div class="reel"><div class="reel-window"><div class="reel-strip"></div></div></div>
-        <div class="reel"><div class="reel-window"><div class="reel-strip"></div></div></div>
-        <div class="reel"><div class="reel-window"><div class="reel-strip"></div></div></div>
-        <svg id="lines" class="lines" aria-hidden="true"></svg>
-      </div>
-      <p class="hint">5 paylines · 3 in a row wins · Space to spin</p>
+        <p id="message" class="message" aria-live="polite"></p>
 
-      <div class="controls">
-        <div class="bet">
-          <span class="label">Bet per line</span>
-          <div class="stepper">
-            <button id="betDown" class="step" aria-label="Lower bet">−</button>
-            <span id="bet" class="amount">$5</span>
-            <button id="betUp" class="step" aria-label="Raise bet">+</button>
+        <div class="grid" id="grid">
+          <div class="reel"><div class="reel-frame"><div class="reel-window"><div class="reel-strip"></div><div class="sheen-layer"></div></div></div></div>
+          <div class="reel"><div class="reel-frame"><div class="reel-window"><div class="reel-strip"></div><div class="sheen-layer"></div></div></div></div>
+          <div class="reel"><div class="reel-frame"><div class="reel-window"><div class="reel-strip"></div><div class="sheen-layer"></div></div></div></div>
+          <svg id="lines" class="lines" aria-hidden="true"></svg>
+        </div>
+        <p class="hint">5 paylines · 3 in a row wins · Space to spin</p>
+
+        <div class="controls">
+          <div class="bet">
+            <span class="label">Bet per line</span>
+            <div class="stepper">
+              <button id="betDown" class="step" aria-label="Lower bet">−</button>
+              <span id="bet" class="amount">$5</span>
+              <button id="betUp" class="step" aria-label="Raise bet">+</button>
+            </div>
+            <span class="sub">Total <span id="total">$25</span></span>
           </div>
-          <span class="sub">Total <span id="total">$25</span></span>
+
+          <button id="spin" class="spin" aria-label="Spin">SPIN</button>
+
+          <div class="win-box">
+            <span class="label">Last win</span>
+            <span id="lastWin" class="amount big">$0</span>
+          </div>
         </div>
 
-        <button id="spin" class="spin" aria-label="Spin">SPIN</button>
-
-        <div class="win-box">
-          <span class="label">Last win</span>
-          <span id="lastWin" class="amount big">$0</span>
-        </div>
+        <button id="reset" class="reset" hidden>Restore $1,000</button>
       </div>
-
-      <button id="reset" class="reset" hidden>Restore $1,000</button>
     </section>
 
     <section class="paytable-wrap">
@@ -67,10 +112,13 @@
     <footer class="fine">Demo purpose only · No real money involved</footer>
   </main>
 
+  <div class="flash" id="flash" aria-hidden="true"></div>
+
   <div id="banner" class="banner" aria-hidden="true">
     <div id="bannerTitle" class="banner-title"></div>
     <div id="bannerAmount" class="banner-amount"></div>
   </div>
+
   <canvas id="fx" aria-hidden="true"></canvas>
 
   <script type="module" src="js/main.js"></script>
